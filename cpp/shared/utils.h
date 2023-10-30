@@ -48,7 +48,7 @@ typedef unsigned __int128 uint_least128_t;
 #endif
 
 //Version of the tool
-#define VERSION "1.1.6"
+#define VERSION "1.1.7"
 
 typedef struct data_t data_t;
 
