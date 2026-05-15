@@ -749,8 +749,15 @@ void map_init(map<pair<uint8_t, uint8_t>, int> &m) {
 
 // Calculates proportions of each value as an index
 void calc_proportions(const uint8_t data[], vector<double> &p, const int sample_size) {
+	unsigned int symbolNumber = p.size();
+	
 	for (int i = 0; i < sample_size; i++) {
-		p[data[i]] += (1.0 / sample_size);
+		p[data[i]] ++;
+	}
+
+	//p now contains symbol counts. Normalize to the per-symbol probability
+	for (int i = 0; i < symbolNumber; i++) {
+		p[i] /= (double)sample_size;
 	}
 }
 
