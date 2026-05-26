@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) {
     int X_i, X_r, X_c, X_max;
     double H_I, H_r, H_c, alpha, ret_min_entropy;
 	double rawmean, median;
-    uint8_t *rdata, *cdata;
+    uint8_t *rdata, *cdata, *crawdata;
     unsigned long int inul;
     data_t data;
     int opt;
@@ -414,7 +414,8 @@ int main(int argc, char* argv[]) {
 
     rdata = data.symbols;
     cdata = (uint8_t*) malloc(data.len);
-    if (cdata == NULL) {
+    crawdata = (uint8_t*) malloc(data.len);
+    if ((cdata == NULL) || (crawdata == NULL)) {
         printf("Error: failure to initialize memory for columns\n");
         if (jsonOutput) {
             if(iid) {
@@ -433,6 +434,8 @@ int main(int argc, char* argv[]) {
                 output.close();
             }
         }
+        if(cdata != NULL) free(cdata);
+        if(crawdata != NULL) free(crawdata);
         exit(-1);
     }
 
@@ -464,6 +467,7 @@ int main(int argc, char* argv[]) {
             //[i*r+j] is row i, column j
             //So, we're fixing a column and iterating through various rows
             cdata[j * c + i] = rdata[i * r + j];
+            crawdata[j * c + i] = data.rawsymbols[i * r + j];
             if (++counts[cdata[j * c + i]] > X_i) X_i = counts[cdata[j * c + i]];
         }
         if (X_i > X_c) X_c = X_i;
@@ -787,10 +791,14 @@ int main(int argc, char* argv[]) {
         bool perm_test_pass_row = permutation_tests(&data, rawmean, median, verbose, tcOverallIid);
 
         data_t data_col;
+        // He rest of the data_col entries are invariant under permutation, so we just copy them.
         memcpy(&data_col, &data, sizeof(data));
-        data_col.symbols = rdata;
+        // Both the translated and raw data are used, and are not invariant under permutation
+        data_col.symbols = cdata;
+        data_col.rawsymbols = crawdata;
 
         bool perm_test_pass_col = permutation_tests(&data_col, rawmean, median, verbose, tcOverallIid);
+
         bool perm_test_pass = perm_test_pass_row && perm_test_pass_col;
 
         tcOverallIid.passed_iid_permutation_tests = perm_test_pass;
@@ -874,6 +882,7 @@ int main(int argc, char* argv[]) {
         printf("min(H_r, H_c, H_I): %f\n\n", min(min(H_r, H_c), H_I));
     }
     free(cdata);
+    free(crawdata);
     free_data(&data);
     return 0;
 }
